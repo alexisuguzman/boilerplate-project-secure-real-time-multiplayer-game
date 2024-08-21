@@ -1,22 +1,23 @@
 body {
-  margin: 20px;
+	margin: 20px;
 }
 
 code {
-  background: #d0d0d5;
+	background: #d0d0d5;
 }
 
 canvas {
-  margin: auto;
+	margin: auto;
+	border: 1px solid black;
 }
 
 .container {
-  display: flex;
-  flex-direction: column;
+	display: flex;
+	flex-direction: column;
 }
 
 @media (min-width: 800px) {
-  .container {
-    flex-direction: row;
-  }
+	.container {
+		flex-direction: row;
+	}
 }
