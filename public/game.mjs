@@ -2,34 +2,88 @@ import Player from "./Player.mjs";
 import Collectible from "./Collectible.mjs";
 
 const socket = io();
-const canvas = document.getElementById("game-window");
-const context = canvas.getContext("2d");
+const canvas = document.getElementById("game-window"); // get canvas element to load game into
+const context = canvas.getContext("2d"); // define context to use for drawing elements
 
 let players = {}; // Store connected players
 let collectibles = {}; // Store collectibles
 let currentPlayerId = null; // Track the current player's ID
 
 // ----------------------------------------------------------------
-// Canvas related functions
+// Preloaded game images
+// ----------------------------------------------------------------
+
+// background image
+let backgroundImage = new Image();
+backgroundImage.src = "./assets/background.png";
+backgroundImage.onload = () => {};
+
+// Player images
+let playerImage = new Image();
+playerImage.src = "./assets/mainPlayer.png";
+playerImage.onload = () => {}; // Image ready
+
+let opponentImage = new Image();
+opponentImage.src = "./assets/opponentPlayer.png";
+opponentImage.onload = () => {}; // Image ready
+
+// Collectible images
+let collectibleImageCopper = new Image();
+collectibleImageCopper.src = "./assets/copperIngot.png";
+collectibleImageCopper.onload = () => {}; // Image ready
+
+let collectibleImageIron = new Image();
+collectibleImageIron.src = "./assets/ironIngot.png";
+collectibleImageIron.onload = () => {}; // Image ready
+
+let collectibleImageGold = new Image();
+collectibleImageGold.src = "./assets/goldIngot.png";
+collectibleImageGold.onload = () => {}; // Image ready
+
+// ----------------------------------------------------------------
+// Canvas management
 // ----------------------------------------------------------------
 
 // Canvas dimensions
-const canvasWidth = 640;
+const canvasWidth = 854;
 const canvasHeight = 480;
 
-// Function to clear the canvas
 function clearCanvas() {
 	context.clearRect(0, 0, canvas.width, canvas.height);
-	console.log("Canvas cleared");
 }
 
-// Function to update the game canvas
+// Function to advance the game by one frame
 function updateGameCanvas() {
 	clearCanvas();
 
+	// Draw background
+	context.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+
+	// Controls text
+	context.fillStyle = "white";
+	context.font = `20px 'Minecraft'`;
+	context.textAlign = "center";
+	context.fillText("Controls: WASD", 100, 32.5);
+
+	// Game title
+	context.font = `25px 'Minecraft'`;
+	context.fillText("Ingot Race", canvas.width / 2, 32.5);
+
+	console.log("Current Player ID:", currentPlayerId);
+	console.log("Current Player Object:", players[currentPlayerId]);
+
+	//Update player rank of client:
+	if (players[currentPlayerId]) {
+		let rank = players[currentPlayerId].calculateRank(players);
+		console.log(`Player rank: ${rank}`);
+		context.font = `20px 'Minecraft'`;
+		context.fillText(rank, canvas.width - 100, 32.5);
+	}
+
 	// Draw all players
 	for (let id in players) {
-		drawPlayer(players[id]);
+		let img = players[id].id === currentPlayerId ? playerImage : opponentImage; // Draw image
+		players[id].drawPlayer(img, context);
 	}
 
 	// Draw all collectibles
@@ -47,33 +101,13 @@ function updateGameCanvas() {
 
 function getRandomPosition() {
 	return {
-		x: Math.floor(Math.random() * (canvasWidth - 20)), // Ensure collectible is within bounds
-		y: Math.floor(Math.random() * (canvasHeight - 20)), // Ensure collectible is within bounds
+		x: Math.floor(Math.random() * (canvasWidth - 64)), // Ensure collectible is within bounds
+		y: Math.floor(Math.random() * (canvasHeight - 64)), // Ensure collectible is within bounds
 	};
 }
-
-// Function to check if two rectangles collide
-function checkCollision(rect1, rect2) {
-	return (
-		rect1.x < rect2.x + rect2.width &&
-		rect1.x + rect1.width > rect2.x &&
-		rect1.y < rect2.y + rect2.height &&
-		rect1.y + rect1.height > rect2.y
-	);
-}
-
 // Function to send movement updates to the server
-function sendMovementUpdate() {
-	console.log("sendMovementUpdate");
-	movePlayer(movement);
-}
-
-// Set update speeds of the game
-// setInterval(() => {
-// 	updateGameCanvas();
-// }, 100);
 setInterval(() => {
-	sendMovementUpdate();
+	movePlayer(movement);
 }, 16); // Adjust the interval as needed 60fps = 16, 30fps = 33
 
 // ----------------------------------------------------------------
@@ -87,24 +121,38 @@ function generateCollectible() {
 	idCounter++;
 	let id = `collectible-${idCounter}`;
 	let position = getRandomPosition();
+	let possibleValues = [1, 5, 10];
+	let randomIndex = Math.floor(Math.random() * possibleValues.length);
 	collectibles[id] = new Collectible({
 		id: id,
 		x: position.x,
 		y: position.y,
 		width: 32,
 		height: 32,
-		value: 1,
+		value: possibleValues[randomIndex],
 	});
 }
 
-let collectibleImage = new Image();
-collectibleImage.src = "./assets/goldIngot.png";
-collectibleImage.onload = () => {}; // Image ready
-
 // Function to draw a collectible
 function drawCollectible(collectible) {
+	let img;
+	switch (collectible.value) {
+		case 1:
+			img = collectibleImageCopper;
+			break;
+		case 5:
+			img = collectibleImageIron;
+			break;
+		case 10:
+			img = collectibleImageGold;
+			break;
+		default:
+			img = collectibleImageCopper;
+			break; // Default to copper if value is invalid
+	}
+
 	context.drawImage(
-		collectibleImage,
+		img,
 		collectible.x,
 		collectible.y,
 		collectible.width,
@@ -113,69 +161,36 @@ function drawCollectible(collectible) {
 }
 
 // ----------------------------------------------------------------
-// Player related functions
+// Player logic
 // ----------------------------------------------------------------
-
-// Pre load images for players
-let playerImage = new Image();
-playerImage.src = "./assets/mainPlayer.png";
-playerImage.onload = () => {}; // Image ready
-
-let opponentImage = new Image();
-opponentImage.src = "./assets/opponentPlayer.png";
-opponentImage.onload = () => {}; // Image ready
-
-function drawPlayer(player) {
-	let img = player.id === currentPlayerId ? playerImage : opponentImage;
-	context.drawImage(img, player.x, player.y, player.width, player.height); // Draw image
-}
 
 // Check for collisions between players and collectibles
 function checkPlayerCollectibleCollision() {
 	for (let playerId in players) {
 		let player = players[playerId];
-		for (let collectibleId in collectibles) {
-			let collectible = collectibles[collectibleId];
-			if (checkCollision(player, collectible)) {
-				console.log("collectible collision detected");
-				player.score += collectible.value;
-				delete collectibles[collectibleId]; // Remove the collectible
-				generateCollectible();
-				socket.emit("updateScore", player.score); // Update player's score
-				socket.emit("updateCollectibles", collectibles); // Update all clients with new collectibles
-			}
+		if (player.handleCollisions(collectibles, socket)) {
+			generateCollectible(); // Make a new collectible
+			socket.emit("updateCollectibles", collectibles); // Update all clients with new collectibles
 		}
 	}
 }
 
 // Handle player movement
-const movePlayer = (directions) => {
-	const player = players[currentPlayerId];
-	const speed = 5; // Adjust speed as needed
-	if (!player) return;
-
-	// Apply movement based on active directions
-	if (directions.left) player.x -= speed;
-	if (directions.right) player.x += speed;
-	if (directions.up) player.y -= speed;
-	if (directions.down) player.y += speed;
-
-	// Ensure player stays within canvas bounds
-	player.x = Math.max(0, Math.min(canvasWidth - player.width, player.x));
-	player.y = Math.max(0, Math.min(canvasHeight - player.height, player.y));
-
-	// Check for collisions with collectibles
-	checkPlayerCollectibleCollision();
-
-	// Update all players with the new player position
-	socket.emit("updatePlayers", players);
-};
-
 let movement = {
 	left: false,
 	right: false,
 	up: false,
 	down: false,
+};
+
+const movePlayer = (directions) => {
+	let player = players[currentPlayerId];
+	if (!player) return;
+
+	player.move(directions, canvasWidth, canvasHeight);
+
+	// Update all players with the new player position
+	socket.emit("updatePlayers", players);
 };
 
 // Update movement state based on key presses
@@ -242,7 +257,6 @@ socket.on("generateCanvas", () => {
 
 // Listen for the connection of a new player
 socket.on("connect", () => {
-	console.log("Creating player...");
 	// Create the player using the client-side Player constructor
 	const newPlayer = new Player({
 		id: socket.id,
@@ -258,30 +272,26 @@ socket.on("connect", () => {
 });
 
 socket.on("deletePlayer", (id) => {
-	console.log("deleting Player");
 	delete players[id];
 });
 
 // Listen for player updates from the server
 socket.on("updatePlayers", (updatedPlayers) => {
-	console.log("Updating players");
-	players = updatedPlayers; // Update local players object
+	players = {};
+	for (let id in updatedPlayers) {
+		players[id] = new Player(updatedPlayers[id]); // Update local players object
+	}
 	if (!currentPlayerId) {
 		// Identify current player based on first connection
 		currentPlayerId = socket.id;
 	}
-	checkPlayerCollectibleCollision(); // Check for collisions after updating players
 });
 
 // Listen for collectible updates from the server
 socket.on("updateCollectibles", (updatedCollectibles) => {
-	collectibles = updatedCollectibles;
-	checkPlayerCollectibleCollision(); // Check for collisions after updating collectibles
-});
-
-// Listen for player's score update from the server
-socket.on("updateScore", (score) => {
-	console.log(`Your score: ${score}`);
+	for (let id in updatedCollectibles) {
+		collectibles[id] = new Collectible(updatedCollectibles[id]);
+	}
 });
 
 // Start the game loop

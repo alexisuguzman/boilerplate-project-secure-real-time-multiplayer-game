@@ -1,5 +1,14 @@
 body {
 	margin: 20px;
+	background-image: url("./assets/pageBackground.png");
+	background-size: cover;
+	background-repeat: no-repeat;
+	background-attachment: fixed;
+	background-position: center;
+}
+
+h1 {
+	font-family: "Minecraft", "Helvetica Neue";
 }
 
 code {

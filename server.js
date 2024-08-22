@@ -115,15 +115,17 @@ io.on("connection", (socket) => {
 
 	// Handle collectible updates from clients
 	socket.on("updateCollectibles", (updatedCollectibles) => {
-		collectibles = updatedCollectibles; // Update server's collectibles state
-		io.emit("updateCollectibles", collectibles); // Broadcast updated state to all clients
+		collectibles = {}; // Clear existing collectibles
+		for (let id in updatedCollectibles) {
+			collectibles[id] = updatedCollectibles[id];
+		}
 	});
+
 	// Handle player disconnect
 	socket.on("disconnect", () => {
 		console.log("Player disconnected:", socket.id);
 		delete players[socket.id]; // Remove player from the game
 		io.emit("deletePlayer", socket.id); // Notify all clients to remove this player
-		io.emit("updatePlayers", players); // Sync all clients with the updated players list
 	});
 });
 

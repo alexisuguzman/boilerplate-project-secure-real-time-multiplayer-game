@@ -1,25 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="description" content="An example for the fCC InfoSec Secure Real-Time Multiplayer Game project">
-  <title>Secure Real-Time Multiplayer Game</title>
-  <link rel="stylesheet" href="../public/style.css" type="text/css">
-  <link href="https://fonts.googleapis.com/css?family=Press+Start+2P&display=swap" rel="stylesheet">
-  <script src="/socket.io/socket.io.js"></script>
-</head>
-<body>
-  <header>
-    <h1>Secure Real-Time Multiplayer Game</h1>
-  </header>
-  <hr style="margin: 25px">
-  <div class="container">
-    <canvas id="game-window" width="640" height="480">
-      Your browser does not support the HTML5 canvas tag.
-    </canvas>
-  </div>
-  <script type="module" src="../public/game.mjs"></script>
-</body>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta
+			name="description"
+			content="An example for the fCC InfoSec Secure Real-Time Multiplayer Game project"
+		/>
+		<title>Secure Real-Time Multiplayer Game</title>
+		<link rel="stylesheet" href="../public/style.css" type="text/css" />
+		<link href="https://fonts.cdnfonts.com/css/minecraft-4" rel="stylesheet" />
+		<script src="/socket.io/socket.io.js"></script>
+	</head>
+	<body>
+		<header>
+			<h1>Secure Real-Time Multiplayer Game</h1>
+		</header>
+		<hr style="margin: 25px" />
+		<div>
+			<img src="./assets/copperIngot.png" alt="Copper Ingot" />
+			<img src="./assets/ironIngot.png" alt="Iron Ingot" />
+			<img src="./assets/goldIngot.png" alt="Gold Ingot" />
+		</div>
+
+		<div class="container">
+			<canvas id="game-window" width="854" height="480">
+				Your browser does not support the HTML5 canvas tag.
+			</canvas>
+		</div>
+		<script type="module" src="../public/game.mjs"></script>
+	</body>
 </html>
